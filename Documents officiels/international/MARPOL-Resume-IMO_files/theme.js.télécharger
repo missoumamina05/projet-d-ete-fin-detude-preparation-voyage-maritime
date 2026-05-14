@@ -1,0 +1,272 @@
+var $site = {
+    navBreakpoint: 992,
+    init: function () {
+        this.navigation.init();
+        this.navigation.scroll();
+        this.sliders();
+        this.accordion();
+        this.sidebarMenus();
+        this.googleMaps();
+        this.searchPopup();
+    },
+    navigation: {
+        init: function () {
+            /**
+             * Open Dropdown submenu on hover for Desktop navigation
+             */
+            // $(".nav-link.dropdown-toggle").hover(function () {
+            $(".nav-item.dropdown").hover(function () {
+                // Open up the dropdown
+                var link = $(this).find("> .dropdown-toggle").first();
+                link.removeAttr('data-toggle'); // remove the data-toggle attribute so we can click and follow link
+                link.parent().addClass('show'); // add the class show to the li parent
+                link.next().addClass('show'); // add the class show to the dropdown div sibling
+                link.next().removeClass('slideOut').addClass('slideIn'); // add the class show to the dropdown div sibling
+                setTimeout(function () {
+                    link.next().addClass('animate'); // add the class show to the dropdown div sibling
+                }, 25)
+
+            }, function () {
+
+                var link = $(this).find("> .dropdown-toggle").first();
+                // no longer hovering over either - lets remove the 'show' classes
+                link.attr('data-toggle', 'dropdown'); // put back the data-toggle attr
+                link.next().removeClass('slideIn').addClass("slideOut");
+
+                setTimeout(function () {
+                    link.parent().removeClass('show');
+                    link.next().removeClass('show');
+                    link.next().removeClass("slideOut").removeClass("animate");
+                }, 250);
+            });
+
+
+            /**
+             * Mobile menu
+             * @type {jQuery}
+             */
+            var menu = $("#navbar-mobile").mmenu({
+                // Options
+                scrollBugFix: false,
+                onClick: {
+                    close: true
+                },
+                extensions: ["fx-listitems-drop", "position-bottom", "border-offset"]
+            }, {
+                // Configuration
+                classNames: {
+                    panel: "Panel",
+                    selected: "active"
+                }
+            });
+
+            var menuAPI = menu.data("mmenu");
+            menuAPI.bind("close:start", function () {
+                $(".navbar-toggler").removeClass("active");
+            })
+
+            $(".mobile-menu-toggler").on("click", function (e) {
+                e.preventDefault();
+                var $that = $(this);
+                if ($that.hasClass("active")) {
+                    $that.removeClass("active");
+                    menuAPI.close();
+                } else {
+                    $that.addClass("active");
+                    menuAPI.open();
+                }
+            });
+        },
+        scroll: function () {
+            var headroom = new Headroom(document.querySelector("#header"), {
+                "offset": 205,
+                "tolerance": 5,
+                "classes": {
+                    "unpinned": "navbar-up"
+                }
+            });
+            headroom.init();
+        }
+    },
+
+
+    sidebarMenus: function () {
+
+        // Open particular submenu in a sidebar if current link exists in the sidebar submenu
+        var links = $(".widget-accordion a:not(.toggler)");
+        var currentPath = window.location.pathname;
+        var isTopLevelLink, sub;
+
+        $.each(links, function (index, tag) {
+
+            if (currentPath.indexOf($(tag).attr("href").toLocaleLowerCase()) != -1) {
+
+                isTopLevelLink = $(tag).parent().is("div");
+
+                if (isTopLevelLink) {
+                    sub = $(tag).parent();
+                } else {
+                    sub = $(tag).parent().parent().parent();
+                }
+
+                sub.addClass("active");
+                sub.find(".toggler").removeClass("collapsed");
+                sub.find("ul").addClass("show");
+                return false;
+            }
+        });
+    },
+
+    googleMaps: function () {
+
+        $(".map-container").each(function () {
+
+            var $that = $(this);
+
+            var locations = $that.data("locations");
+            if (locations.length > 0) {
+                var center = new google.maps.LatLng(locations[0]['lat'], locations[0]['long']);
+                var mapoptions = {
+                    center: center,
+                    zoom: 2,
+                    scrollwheel: false,
+                };
+
+                var map = new google.maps.Map($that[0], mapoptions);
+
+                for (var i = 0; i < Object.keys(locations).length; i++) {
+                    // Set markers on the map
+                    var marker = new google.maps.Marker({
+                        position: new google.maps.LatLng(locations[i]['lat'], locations[i]['long']),
+                        map: map,
+                        icon: {
+                            url: "img/pin.png",
+                            scaledSize: new google.maps.Size(151, 120), // size
+                        }
+                    });
+                }
+            }
+        });
+    },
+
+    accordion: function () {
+        $(".accordion > div").on('show.bs.collapse', function () {
+            $(this).toggleClass("active")
+        });
+
+        $(".accordion > div").on('hide.bs.collapse', function () {
+            $(this).toggleClass("active")
+        });
+
+
+        // Accordion in the content. Expand accordion with particular ID and scroll page that accordion component
+        var hash = $(location).prop('hash'),
+            a;
+        if (hash) {
+            a = $(hash);
+            if (a.length > 0 && a.hasClass("collapse")) {
+                a.collapse('show');
+                $('html, body').animate({
+                    scrollTop: $(hash).offset().top - 140
+                }, 500);
+            }
+        }
+    },
+
+    searchPopup: function () {
+        $('#search-box-modal').on('shown.bs.modal', function (e) {
+            $('input[name=s]').focus();
+        })
+    },
+
+    sliders: function () {
+
+        // Hero slider
+        //
+        if ($(".hero-slider").length > 0) {
+            tns({
+                container: ".hero-slider",
+                autoHeight: true,
+                items: 1,
+                swipeAngle: 20,
+                mouseDrag: true,
+                controlsPosition: "bottom",
+                center: true,
+                gutter: 0,
+                navPosition: "bottom",
+                controlsText: ['prev<i class="icon-chevron-left-solid"></i>',
+                    'next<i class="icon-chevron-right-solid"></i>']
+            });
+        }
+
+        // News sliders
+        $(".news-slider").each(function () {
+
+            var sl = $(this),
+                opts = {},
+                defaultOptions = {
+                    container: this,
+                    items: 1,
+                    gutter: 20,
+                    startIndex: 2,
+                    swipeAngle: 20,
+                    mouseDrag: true,
+                    controlsPosition: "bottom",
+                    navPosition: "bottom",
+                    controlsText: [
+                        'prev<i class="icon-chevron-left-solid"></i>',
+                        'next<i class="icon-chevron-right-solid"></i>'
+                    ],
+                    responsive: {
+                        640: {
+                            gutter: 45,
+                            items: 2
+                        },
+                        992: {
+                            gutter: 0,
+                            items: 3
+                        },
+                        1200: {
+                            items: 4
+                        },
+                        1920: {
+                            items: 5
+                        }
+                    }
+                };
+
+
+            // Alter default options if custom options defined
+
+            if (sl.data("conf")) {
+                opts = sl.data("conf");
+            }
+
+            opts = $.extend({}, defaultOptions, opts);
+            tns(opts);
+        });
+
+
+        // Sliders in boxes
+        $(".slider-box2").each(function () {
+            tns({
+                container: this,
+                items: 1,
+                swipeAngle: 20,
+                mouseDrag: true,
+                controlsPosition: "bottom",
+                navPosition: "bottom",
+                controlsText: ['prev<i class="icon-chevron-left-solid"></i>',
+                    'next<i class="icon-chevron-right-solid"></i>']
+            });
+        });
+        // }
+    }
+}
+
+$("document").ready(function () {
+    $site.init();
+});
+if (typeof google != "undefined") {
+    google.maps.event.addDomListener(window, 'load', $site.googleMaps);
+}
